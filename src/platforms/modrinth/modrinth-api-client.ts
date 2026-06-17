@@ -226,6 +226,19 @@ export class ModrinthApiClient {
     }
 
     /**
+     * Fetches a project version by its version number.
+     *
+     * @param idOrSlug - The project id or slug.
+     * @param versionNumber - The version number to search for.
+     *
+     * @returns The version with the specified version number, or `undefined` if no such version exists.
+     */
+    async getProjectVersionByNumber(idOrSlug: string, versionNumber: string): Promise<ModrinthVersion | undefined> {
+        const versions = await this.getProjectVersions(idOrSlug);
+        return versions.find(x => x.version_number === versionNumber);
+    }
+
+    /**
      * Unfeatures previous project versions based on the provided mode.
      *
      * @param currentVersion - The current version to use as an anchor point.

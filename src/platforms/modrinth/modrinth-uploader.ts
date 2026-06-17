@@ -60,6 +60,18 @@ export class ModrinthUploader extends GenericPlatformUploader<ModrinthUploaderOp
         const unfeatureMode = request.unfeatureMode ?? (request.featured ? ModrinthUnfeatureMode.SUBSET : ModrinthUnfeatureMode.NONE);
 
         const project = await this.getProject(request.id, api);
+
+        const existingVersion = await api.getProjectVersionByNumber(project.id, request.version);
+        if (existingVersion) {
+            this._logger.info(`🔍 Version "${request.version}" already exists on Modrinth; skipping publication`);
+            return {
+                id: project.id,
+                version: existingVersion.id,
+                url: `https://modrinth.com/${project.project_type}/${project.slug}/version/${existingVersion.version_number}`,
+                files: existingVersion.files.map(x => ({ id: x.hashes.sha1, name: x.filename, url: x.url })),
+            };
+        }
+
         const version = await this.createVersion(request, project, api);
         await this.unfeaturePreviousVersions(version, unfeatureMode, api);
 
