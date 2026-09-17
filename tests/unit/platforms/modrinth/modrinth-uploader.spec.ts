@@ -40,6 +40,8 @@ const MODRINTH_FETCH = createFakeFetch({
             project_type: "mod",
         }),
 
+        "^\\/project\\/AAAAAAAA\\/version$": () => HttpResponse.json([]),
+
         "^\\/project\\/AAAAAAAA\\/version\\?featured=true": () => HttpResponse.json([]),
 
         "^\\/project\\/fabric-api\\/check$": () => ({
@@ -125,6 +127,52 @@ describe("ModrinthUploader", () => {
                     id: "sha1",
                     name: "file.txt",
                     url: "https://cdn.modrinth.com/data/AAAAAAAA/versions/BBBBBBBB/file.txt",
+                }],
+            });
+        });
+
+        test("skips publication when the version already exists", async () => {
+            const fetch = createFakeFetch({
+                baseUrl: MODRINTH_API_URL,
+                requiredHeaders: ["Authorization"],
+
+                GET: {
+                    "^\\/project\\/foo$": () => ({
+                        id: "AAAAAAAA",
+                        slug: "foo",
+                        project_type: "mod",
+                    }),
+
+                    "^\\/project\\/AAAAAAAA\\/version$": () => HttpResponse.json([{
+                        id: "CCCCCCCC",
+                        version_number: "1.0.0",
+                        files: [{
+                            filename: "file.txt",
+                            url: "https://cdn.modrinth.com/data/AAAAAAAA/versions/CCCCCCCC/file.txt",
+                            hashes: { sha1: "sha1" },
+                        }],
+                    }]),
+                },
+            });
+            const uploader = new ModrinthUploader({ fetch });
+
+            const report = await uploader.upload({
+                token: SecureString.from("token"),
+                id: "foo",
+                version: "1.0.0",
+                files: [FileInfo.of("file.txt")],
+                gameVersions: ["1.18.2"],
+                loaders: ["fabric"],
+            });
+
+            expect(report).toEqual({
+                id: "AAAAAAAA",
+                version: "CCCCCCCC",
+                url: "https://modrinth.com/mod/foo/version/1.0.0",
+                files: [{
+                    id: "sha1",
+                    name: "file.txt",
+                    url: "https://cdn.modrinth.com/data/AAAAAAAA/versions/CCCCCCCC/file.txt",
                 }],
             });
         });

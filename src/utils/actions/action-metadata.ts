@@ -110,9 +110,9 @@ export interface ActionMetadata {
          *
          * @remarks
          *
-         * Due to the deprecation of Node12, the available options are quite limited now.
+         * Node 20 is deprecated on GitHub-hosted runners; use Node 24.
          */
-        using: "node16";
+        using: "node16" | "node20" | "node24";
 
         /**
          * The file that contains your action code.
